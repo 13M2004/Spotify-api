@@ -1,71 +1,189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproducción de Canciones</title>
-</head>
-<body>
-    <h1>Canciones más escuchadas de mi cuenta de Spotify</h1>
 
-    <!-- Botón de inicio de sesión -->
-    <a href="https://open.spotify.com/intl-es" target="_blank">
-        <button>Iniciar Sesión en Spotify</button>
-    </a>
-
-    <!-- Mostrar la cola de canciones -->
-    <div id="cola"></div>
-
-    <!-- Botones de control -->
-    <button onclick="reproducirCanciones()">Reproducir Canciones</button>
-    <button onclick="pausarReproduccion()">Pausar Reproducción</button>
-
-    <!-- Añadir canción manualmente -->
-    <h3>Añadir Canción Manualmente:</h3>
-    <input type="text" id="songName" placeholder="Nombre de la canción">
-    <input type="text" id="songArtist" placeholder="Artista de la canción">
-    <input type="number" id="songPriority" placeholder="Prioridad (1-10)">
-    <button onclick="agregarCancion(
-        document.getElementById('songName').value, 
-        document.getElementById('songArtist').value, 
-        document.getElementById('songPriority').value
-    )">Añadir Canción</button>
-
-    <!-- Scripts -->
-    <script src="spotify.js"></script> <!-- Código de la clase SpotifyPlayer -->
-    <script>
-        let spotifyPlayer;
-
-        // Inicializar SpotifyPlayer con un token de acceso
-        const accessToken = "TBQDPwsux4bx6Z3CJXFmWVYJkP10XZLJ8cjZ98_Elw-j33mVJCLA6Bgt3216w_Yd4LnZ3nK-KVsHF1Bs3iN-OuZmij0avS9jNY0FOdFCnrkryTJlyHnraA_nXTYnjv-DXbTDW8HCRvq4 ";
-        spotifyPlayer = new SpotifyPlayer(accessToken);
-
-        // Muestra las canciones en la cola en el div con id="cola"
-        function mostrarCola() {
-            const colaDiv = document.getElementById('cola');
-            colaDiv.innerHTML = ''; // Limpiar cola actual
-            spotifyPlayer.mostrar();
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
 
-        // Llamar a mostrarCola cada vez que se añaden o eliminan canciones
-        function agregarCancion(name, artist, priority) {
-            spotifyPlayer.enqueue({ name, artist, priority, url: 'https://www.spotify.com' });
-            mostrarCola();  // Actualiza la cola mostrada
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1db954;
+            margin-bottom: 20px;
+        }
+
+        .btn, .input-field {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background-color: #1db954;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #1ed760;
+        }
+
+        .input-field {
+            border: 1px solid #ccc;
+        }
+
+        .song-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+
+        .song-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .song-item:last-child {
+            border-bottom: none;
+        }
+
+        .song-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .song-artist {
+            color: #777;
+        }
+
+        .song-priority {
+            color: #888;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Spotify - Colamusic</h1>
+
+        <!-- Botón de inicio de sesión -->
+        <a href="https://open.spotify.com/intl-es" target="_blank">
+            <button class="btn">Iniciar Sesión en Spotify</button>
+        </a>
+
+        <!-- Mostrar la cola de canciones -->
+        <div class="song-list" id="cola"></div>
+
+        <!-- Botones de control -->
+        <button class="btn" onclick="reproducirCanciones()">Reproducir Canciones</button>
+        <button class="btn" onclick="pausarReproduccion()">Pausar Reproducción</button>
+
+        <!-- Añadir canción manualmente -->
+        <h3>Añadir Canción Manualmente:</h3>
+        <input type="text" id="songName" class="input-field" placeholder="Nombre de la canción">
+        <input type="text" id="songArtist" class="input-field" placeholder="Artista de la canción">
+        <input type="number" id="songPriority" class="input-field" placeholder="Prioridad (1-10)">
+        <button class="btn" onclick="agregarCancion()">Añadir Canción</button>
+    </div>
+
+    <script>
+        let colaDeCanciones = [];
+
+        function mostrarCola() {
+            const colaDiv = document.getElementById('cola');
+            colaDiv.innerHTML = '';
+
+            colaDeCanciones.forEach((cancion) => {
+                const songDiv = document.createElement('div');
+                songDiv.classList.add('song-item');
+                songDiv.innerHTML = `
+                    <span class="song-name">${cancion.name}</span>
+                    <span class="song-artist">${cancion.artist}</span>
+                    <span class="song-priority">Prioridad: ${cancion.priority}</span>
+                `;
+                colaDiv.appendChild(songDiv);
+            });
+        }
+
+        function agregarCancion() {
+            const name = document.getElementById('songName').value;
+            const artist = document.getElementById('songArtist').value;
+            const priority = parseInt(document.getElementById('songPriority').value);
+
+            if (name && artist && !isNaN(priority)) {
+                colaDeCanciones.push({ name, artist, priority });
+                mostrarCola();
+            } else {
+                alert('Por favor, rellena todos los campos.');
+            }
+
+            document.getElementById('songName').value = '';
+            document.getElementById('songArtist').value = '';
+            document.getElementById('songPriority').value = '';
         }
 
         function pausarReproduccion() {
-            // Lógica para pausar la reproducción
             console.log('Reproducción pausada');
         }
 
         function reproducirCanciones() {
-            // Llamar a la función de reproducción de SpotifyPlayer
-            spotifyPlayer.reproducirCanciones();
+            if (colaDeCanciones.length > 0) {
+                const cancion = colaDeCanciones.shift();
+                console.log(`Reproduciendo: ${cancion.name} de ${cancion.artist}`);
+                alert(`Reproduciendo: ${cancion.name} de ${cancion.artist}`);
+
+                const colaDiv = document.getElementById('cola');
+                const songDiv = document.createElement('div');
+                songDiv.classList.add('song-item');
+                songDiv.innerHTML = `
+                    <span class="song-name">${cancion.name}</span>
+                    <span class="song-artist">${cancion.artist}</span>
+                    <span class="song-priority">Prioridad: ${cancion.priority}</span>
+                `;
+                colaDiv.prepend(songDiv);
+
+                mostrarCola();
+            } else {
+                alert('No hay canciones en la cola.');
+            }
         }
 
-        // Obtener las canciones más escuchadas y añadirlas a la cola
-        spotifyPlayer.obtenerCancionesMasEscuchadas();
+        mostrarCola();
     </script>
+
 </body>
 </html>
+
 

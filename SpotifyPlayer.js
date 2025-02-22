@@ -1,6 +1,5 @@
 class SpotifyPlayer {
     constructor(accessToken) {
-        // Guardamos el token de acceso proporcionado al instanciar la clase
         if (!accessToken) {
             console.error('Token de acceso no proporcionado.');
             return;
